@@ -7,6 +7,7 @@
 #   make            (= make all) compila tudo que já existe
 #   make dynathreadmaker        compila apenas o DynaThreadMaker
 #   make centraltalk            compila apenas o CentralTalk
+#   make peertalk               compila apenas o PeerTalk
 #   make clean                  remove binários e objetos
 #
 # Regra do projeto: tratar todo warning como bug. Por isso -Wall -Wextra.
@@ -25,9 +26,9 @@ COMMON_SRC := common/ipc_utils.c
 COMMON_OBJ := common/ipc_utils.o
 
 # ------------------------------------------------------------------------- #
-.PHONY: all clean dirs dynathreadmaker centraltalk
+.PHONY: all clean dirs dynathreadmaker centraltalk peertalk
 
-all: dynathreadmaker centraltalk
+all: dynathreadmaker centraltalk peertalk
 
 # Garante a existência do diretório de saída antes de linkar.
 dirs:
@@ -54,6 +55,17 @@ $(BIN)/chairman: centraltalk/chairman.c $(COMMON_OBJ) | dirs
 
 $(BIN)/speaker: centraltalk/speaker.c $(COMMON_OBJ) | dirs
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ centraltalk/speaker.c $(COMMON_OBJ) $(LDFLAGS)
+
+# ------------------------------------------------------------------------- #
+# PeerTalk
+# ------------------------------------------------------------------------- #
+peertalk: dirs $(BIN)/peertalk_init $(BIN)/peertalker
+
+$(BIN)/peertalk_init: peertalk/peertalk_init.c $(COMMON_OBJ) | dirs
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ peertalk/peertalk_init.c $(COMMON_OBJ) $(LDFLAGS)
+
+$(BIN)/peertalker: peertalk/peertalker.c $(COMMON_OBJ) | dirs
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ peertalk/peertalker.c $(COMMON_OBJ) $(LDFLAGS)
 
 # ------------------------------------------------------------------------- #
 # Objeto comum

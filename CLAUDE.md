@@ -158,31 +158,34 @@ gdb ./bin/chairman             # depurar
 
 > Atualizar esta seção ao fim de cada sessão de trabalho para dar continuidade.
 
-- **Fase atual:** Fases 1 e 2 concluídas. DynaThreadMaker testado e OK na VM.
-  Próxima: Fase 3 (PeerTalk).
+- **Fase atual:** Fases 1, 2 e 3 (código) concluídas. DynaThreadMaker e CentralTalk
+  testados e OK na VM. PeerTalk aguardando teste na VM. Próxima: Fase 4 (relatório).
 - **Feito:**
   - Fase 0 — infra: `.gitignore`, `.ipc_key` (âncora ftok), `common/protocol.h`,
-    `common/ipc_utils.{h,c}` (wrappers de fila com tratamento de erro), `Makefile`
-    (`-Wall -Wextra -std=c11 -pthread`, alvos `all`/`dynathreadmaker`/`centraltalk`/
-    `clean`), `scripts/limpa_ipc.sh`, README raiz.
-  - Fase 1 — DynaThreadMaker (`servidor.c` + `cliente.c` + README): **testado OK na
-    VM**. Cópia de argumentos protegida por `pthread_mutex_t` + `pthread_cond_t` (a
-    principal só prossegue após a secundária sinalizar a cópia), SIGINT remove a fila,
-    cliente com timeout (IPC_NOWAIT em laço). Correção aplicada: servidor precisava
-    incluir `<sys/ipc.h>`/`<sys/msg.h>` por usar IPC_RMID/IPC_CREAT direto.
-  - Fase 2 — CentralTalk (`chairman.c` + `speaker.c` + README): chairman **sequencial
-    single-thread** (sem mutex, arrays estáticos: `CT_MAX_USUARIOS/MSGS/POSTS`),
-    mantém msgs por usuário + fórum + logados. Todos os comandos do enunciado
-    (send/msgs/post/show/del msgs/del post N/del posts/users/myid/exit) + login com
-    nome único. Respostas multilinha via 1 msg/linha com flag `fim`; speaker faz
-    parsing dos comandos e exibe respostas, com timeout.
-- **Decisão tomada:** IPC **System V** (confirmado). CentralTalk: chairman sequencial
-  + arrays estáticos (confirmado com o usuário).
-- **Próximo passo:** Fase 3 — PeerTalk (`peertalker`). Reusar `protocol.h`
-  (PROJ_ID_PEERTALK reservado). Novidade da fase: lista de usuários em **memória
-  compartilhada (shmget)** protegida por **mutex/semáforo (semget)** — `ipc_utils`
-  precisará de helpers de shm/sem. Cada peer executa os próprios comandos; msgtyp =
-  PID destino, 1º campo de dados = PID origem.
-- **Pendências/dúvidas:** validar compilação/testes do CentralTalk na VM.
+    `common/ipc_utils.{h,c}` (wrappers de fila/shm/sem com tratamento de erro),
+    `Makefile` (`-Wall -Wextra -std=c11 -pthread`, alvos `all`/`dynathreadmaker`/
+    `centraltalk`/`peertalk`/`clean`), `scripts/limpa_ipc.sh`, README raiz.
+  - Fase 1 — DynaThreadMaker (`servidor.c` + `cliente.c`): **testado OK na VM**.
+    Cópia de argumentos protegida por `pthread_mutex_t` + `pthread_cond_t`, SIGINT
+    remove a fila, cliente com timeout. Correção: incluir `<sys/ipc.h>`/`<sys/msg.h>`.
+  - Fase 2 — CentralTalk (`chairman.c` + `speaker.c`): **testado OK na VM**. Chairman
+    sequencial single-thread (arrays estáticos), todos os comandos + login único,
+    respostas multilinha via flag `fim`. Correção: buffers `MAX_LINHA` para evitar
+    `-Wformat-truncation` ao compor "prefixo + texto".
+  - Fase 3 — PeerTalk (`peertalk_init.c` + `peertalker.c`): lista de usuários em
+    **memória compartilhada (shmget)** protegida por **semáforo binário (semget,
+    SEM_UNDO)** — toda operação na lista entre `sem_lock`/`sem_unlock`. `peertalk_init`
+    cria/zera/remove os recursos (`clean`); peers só anexam (não removem ao sair, só
+    descadastram). Fila p2p: mtype = PID destino, `pid_origem` no corpo. `recv` drena
+    a fila por PID com IPC_NOWAIT para tabela local; `msgs`/`del msgs` operam local.
+    `ipc_utils` ganhou helpers de shm/sem + `union semun`.
+- **Decisões tomadas:** IPC **System V**. CentralTalk: chairman sequencial + arrays
+  estáticos. PeerTalk: binário separado `peertalk_init` (peers livres da infra);
+  limpeza manual (`peertalk_init clean`/`limpa_ipc.sh`); `recv` não-bloqueante.
+- **Próximo passo:** (1) testar PeerTalk na VM; (2) Fase 4 — relatório SBC (LaTeX,
+  ≥10 págs) + empacotar ZIP com fontes + PDF. `make clean` antes de zipar.
+- **Pendências/dúvidas:** validar compilação/testes do PeerTalk na VM (foco no mutex
+  da lista em logins/logouts simultâneos).
 - **Convenção de binários:** `bin/dyn_servidor`, `bin/dyn_cliente`, `bin/chairman`,
-  `bin/speaker`. Executar sempre a partir da raiz do projeto (ftok usa `./.ipc_key`).
+  `bin/speaker`, `bin/peertalk_init`, `bin/peertalker`. Executar sempre a partir da
+  raiz do projeto (ftok usa `./.ipc_key`).

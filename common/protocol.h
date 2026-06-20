@@ -34,7 +34,11 @@
 
 #define PROJ_ID_DYNATHREAD  'D'   /* DynaThreadMaker */
 #define PROJ_ID_CENTRALTALK 'C'   /* CentralTalk     (Fase 2) */
-#define PROJ_ID_PEERTALK    'P'   /* PeerTalk        (Fase 3) */
+/* PeerTalk usa TRÊS recursos IPC distintos, logo três ids de projeto
+ * diferentes (mesmo arquivo-âncora, chaves distintas): */
+#define PROJ_ID_PEERTALK_MSG 'P'  /* fila de mensagens geral */
+#define PROJ_ID_PEERTALK_SHM 'Q'  /* memória compartilhada (lista de usuários) */
+#define PROJ_ID_PEERTALK_SEM 'R'  /* semáforo (mutex da lista) */
 
 /* ------------------------------------------------------------------------- *
  * Convenção de msgtyp (campo `mtype` da mensagem System V)
@@ -186,5 +190,60 @@ struct ct_msg_resposta {
 #define CT_MAX_USUARIOS         32   /* usuários logados simultaneamente */
 #define CT_MAX_MSGS_POR_USUARIO 64   /* mensagens diretas guardadas por usuário */
 #define CT_MAX_POSTS            128  /* mensagens no fórum público */
+
+/* ========================================================================= *
+ *                             SISTEMA PeerTalk
+ * ========================================================================= *
+ * Arquitetura PEER-TO-PEER: não há servidor. Cada processo `peertalker`
+ * executa os próprios comandos, operando diretamente sobre:
+ *   - uma LISTA DE USUÁRIOS logados em MEMÓRIA COMPARTILHADA (shm), que é uma
+ *     SEÇÃO CRÍTICA protegida por um SEMÁFORO binário (mutex). Todo acesso à
+ *     lista (consulta/cadastro/descadastro) é feito entre sem_lock e sem_unlock;
+ *   - uma FILA DE MENSAGENS geral, por onde os peers trocam mensagens diretas.
+ *
+ * Os recursos IPC (shm + sem + fila) são criados/inicializados por um binário
+ * separado `peertalk_init` (mantém os peers livres de responsabilidade sobre a
+ * infraestrutura). Os peertalkers apenas ANEXAM os recursos já existentes.
+ *
+ * Convenção da fila (enunciado):
+ *   - mtype = PID do peer DESTINO (para quem a mensagem se destina);
+ *   - 1º campo de dados = PID do peer ORIGEM (quem enviou).
+ * Com esses dois PIDs estabelece-se a comunicação p2p entre quaisquer peers.
+ */
+
+/* Um usuário logado na lista compartilhada: nome + PID do peertalker. */
+struct pt_usuario {
+    int   ativo;                 /* 1 = slot ocupado, 0 = livre */
+    char  nome[MAX_NOME];
+    pid_t pid;                   /* identificador único enquanto logado */
+};
+
+/* Estrutura da memória compartilhada: a lista de usuários logados.
+ * Acesso SEMPRE protegido pelo semáforo (mutex). */
+#define PT_MAX_USUARIOS 32
+struct pt_lista_compartilhada {
+    struct pt_usuario usuarios[PT_MAX_USUARIOS];
+};
+
+/* Mensagem direta trocada pela fila geral (peer ORIGEM -> peer DESTINO).
+ *   - mtype       = PID do destino (roteamento da fila);
+ *   - pid_origem  = PID de quem enviou (1º campo de dados, conforme enunciado);
+ *   - nome_origem = nome de quem enviou (conveniência para exibição);
+ *   - texto       = conteúdo da mensagem.
+ */
+struct pt_msg {
+    long  mtype;                 /* = PID do peer destino */
+
+    pid_t pid_origem;            /* PID do peer originador (1º campo de dados) */
+    char  nome_origem[MAX_NOME]; /* nome do originador (para exibir no destino) */
+    char  texto[MAX_TEXTO];      /* texto da mensagem */
+};
+
+#define PT_MSG_BODY_SIZE (sizeof(struct pt_msg) - sizeof(long))
+
+/* Tabela LOCAL de mensagens já recebidas por um peer (preenchida pelo `recv`,
+ * exibida pelo `msgs`, esvaziada pelo `del msgs`). É local ao processo, não
+ * compartilhada. */
+#define PT_MAX_MSGS_LOCAIS 64
 
 #endif /* PROTOCOL_H */

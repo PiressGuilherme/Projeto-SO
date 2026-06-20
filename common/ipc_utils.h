@@ -71,4 +71,68 @@ ssize_t tentar_receber_msg(int msqid, void *msg, size_t tam, long tipo);
  */
 void remover_fila(int msqid);
 
+/* ------------------------------------------------------------------------- *
+ * Memória compartilhada (usada pelo PeerTalk — Fase 3)
+ * ------------------------------------------------------------------------- */
+
+/*
+ * Envolve shmget(). `flags` controla criação/permissões:
+ *   - criador: IPC_CREAT | IPC_EXCL | 0666  (falha se já existir)
+ *   - anexante: 0                            (apenas abre uma já existente)
+ * Em erro, perror() + exit(). Retorna o id do segmento (shmid).
+ */
+int criar_shm(key_t chave, size_t tam, int flags);
+
+/*
+ * Envolve shmat(): anexa o segmento ao espaço de endereçamento do processo.
+ * Em erro, perror() + exit(). Retorna o ponteiro para a região compartilhada.
+ */
+void *anexar_shm(int shmid);
+
+/*
+ * Envolve shmdt(): desanexa a região (não remove o segmento). Em erro, perror().
+ */
+void desanexar_shm(const void *addr);
+
+/*
+ * Remove o segmento de memória compartilhada (shmctl IPC_RMID). Em erro, perror().
+ */
+void remover_shm(int shmid);
+
+/* ------------------------------------------------------------------------- *
+ * Semáforos (usado pelo PeerTalk — Fase 3)
+ * ------------------------------------------------------------------------- *
+ * Usamos um conjunto com UM semáforo, operado como mutex binário (valor 1 =
+ * livre, 0 = ocupado) para proteger a lista de usuários na memória compartilhada.
+ */
+
+/*
+ * Envolve semget(). `flags` como em criar_shm. Em erro, perror() + exit().
+ * Retorna o id do conjunto de semáforos (semid).
+ */
+int criar_sem(key_t chave, int flags);
+
+/*
+ * Inicializa o semáforo (índice 0 do conjunto) com `valor` via semctl(SETVAL).
+ * Deve ser chamada APENAS pelo processo criador, uma vez. Em erro, perror() + exit().
+ */
+void inicializar_sem(int semid, int valor);
+
+/*
+ * Operação P (wait/lock): decrementa o semáforo, bloqueando se já está em 0.
+ * Marca a ENTRADA na seção crítica. Em erro, perror() + exit().
+ */
+void sem_lock(int semid);
+
+/*
+ * Operação V (signal/unlock): incrementa o semáforo, liberando a seção crítica.
+ * Em erro, perror() + exit().
+ */
+void sem_unlock(int semid);
+
+/*
+ * Remove o conjunto de semáforos (semctl IPC_RMID). Em erro, perror().
+ */
+void remover_sem(int semid);
+
 #endif /* IPC_UTILS_H */

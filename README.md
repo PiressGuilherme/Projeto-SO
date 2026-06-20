@@ -8,7 +8,7 @@ memória compartilhada, semáforos) e **pthreads**. Desenvolvido em VM Linux
 |---|---|---|
 | **DynaThreadMaker** | Cliente/servidor; servidor cria threads sob demanda via fila de mensagens; cópia de argumentos sincronizada por mutex. | ✅ implementado |
 | **CentralTalk** | Chat centralizado (`chairman` + `speaker`); lógica de comandos no servidor. | ✅ implementado |
-| **PeerTalk** | Chat peer-to-peer; lista de usuários em memória compartilhada protegida por mutex. | ⏳ Fase 3 |
+| **PeerTalk** | Chat peer-to-peer; lista de usuários em memória compartilhada protegida por mutex. | ✅ implementado |
 
 ## Requisitos (na VM Linux)
 
@@ -39,6 +39,7 @@ Cada sistema tem instruções próprias:
 
 - DynaThreadMaker → [`dynathreadmaker/README.md`](dynathreadmaker/README.md)
 - CentralTalk → [`centraltalk/README.md`](centraltalk/README.md)
+- PeerTalk → [`peertalk/README.md`](peertalk/README.md)
 
 Resumo do DynaThreadMaker:
 
@@ -58,6 +59,14 @@ Resumo do CentralTalk:
 ./bin/speaker
 ```
 
+Resumo do PeerTalk (sem servidor — crie a infra primeiro):
+
+```bash
+./bin/peertalk_init          # cria shm + semáforo + fila (uma vez)
+./bin/peertalker             # um por usuário, em terminais diferentes
+./bin/peertalk_init clean    # remove os recursos IPC ao final
+```
+
 ## Estrutura do repositório
 
 ```
@@ -74,6 +83,10 @@ Resumo do CentralTalk:
 ├── centraltalk/
 │   ├── chairman.c           # servidor
 │   ├── speaker.c            # cliente
+│   └── README.md
+├── peertalk/
+│   ├── peertalk_init.c      # cria/remove os recursos IPC (shm+sem+fila)
+│   ├── peertalker.c         # processo peer (login, comandos, p2p)
 │   └── README.md
 ├── scripts/
 │   └── limpa_ipc.sh         # remove recursos IPC órfãos entre testes

@@ -9,9 +9,20 @@
 
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <sys/shm.h>
+#include <sys/sem.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+
+/* A union semun, exigida por semctl(SETVAL), NÃO é mais declarada pelos headers
+ * em sistemas modernos (conforme a página de manual de semctl) — cabe ao
+ * programa defini-la. */
+union semun {
+    int               val;    /* valor para SETVAL */
+    struct semid_ds  *buf;    /* buffer para IPC_STAT, IPC_SET */
+    unsigned short   *array;  /* array para GETALL, SETALL */
+};
 
 key_t gerar_chave(const char *caminho, int id_projeto)
 {
@@ -82,5 +93,104 @@ void remover_fila(int msqid)
      * em caso de falha porque normalmente já estamos no caminho de saída. */
     if (msgctl(msqid, IPC_RMID, NULL) == -1) {
         perror("msgctl IPC_RMID (remover_fila)");
+    }
+}
+
+/* ------------------------------------------------------------------------- *
+ * Memória compartilhada
+ * ------------------------------------------------------------------------- */
+
+int criar_shm(key_t chave, size_t tam, int flags)
+{
+    int shmid = shmget(chave, tam, flags);
+    if (shmid == -1) {
+        perror("shmget (criar_shm)");
+        exit(EXIT_FAILURE);
+    }
+    return shmid;
+}
+
+void *anexar_shm(int shmid)
+{
+    /* shmat retorna (void *) -1 em erro, e não NULL. */
+    void *addr = shmat(shmid, NULL, 0);
+    if (addr == (void *) -1) {
+        perror("shmat (anexar_shm)");
+        exit(EXIT_FAILURE);
+    }
+    return addr;
+}
+
+void desanexar_shm(const void *addr)
+{
+    if (shmdt(addr) == -1) {
+        perror("shmdt (desanexar_shm)");
+    }
+}
+
+void remover_shm(int shmid)
+{
+    if (shmctl(shmid, IPC_RMID, NULL) == -1) {
+        perror("shmctl IPC_RMID (remover_shm)");
+    }
+}
+
+/* ------------------------------------------------------------------------- *
+ * Semáforos (conjunto com um único semáforo, usado como mutex binário)
+ * ------------------------------------------------------------------------- */
+
+int criar_sem(key_t chave, int flags)
+{
+    /* nsems = 1: um único semáforo no conjunto. */
+    int semid = semget(chave, 1, flags);
+    if (semid == -1) {
+        perror("semget (criar_sem)");
+        exit(EXIT_FAILURE);
+    }
+    return semid;
+}
+
+void inicializar_sem(int semid, int valor)
+{
+    union semun arg;
+    arg.val = valor;
+    if (semctl(semid, 0, SETVAL, arg) == -1) {
+        perror("semctl SETVAL (inicializar_sem)");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void sem_lock(int semid)
+{
+    /* Operação P: sem_op = -1 decrementa; se o valor for 0, BLOQUEIA até que
+     * outro processo libere (V). SEM_UNDO faz o kernel desfazer a operação se
+     * o processo morrer segurando o lock — evita travar a lista para sempre. */
+    struct sembuf op;
+    op.sem_num = 0;
+    op.sem_op  = -1;
+    op.sem_flg = SEM_UNDO;
+    if (semop(semid, &op, 1) == -1) {
+        perror("semop P (sem_lock)");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void sem_unlock(int semid)
+{
+    /* Operação V: sem_op = +1 incrementa, liberando quem espera. */
+    struct sembuf op;
+    op.sem_num = 0;
+    op.sem_op  = +1;
+    op.sem_flg = SEM_UNDO;
+    if (semop(semid, &op, 1) == -1) {
+        perror("semop V (sem_unlock)");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void remover_sem(int semid)
+{
+    if (semctl(semid, 0, IPC_RMID) == -1) {
+        perror("semctl IPC_RMID (remover_sem)");
     }
 }
