@@ -101,11 +101,59 @@ Gera `bin/peertalk_init` e `bin/peertalker`.
 4. **recv sem mensagens:** `recv` sem nada destinado a você → "nenhuma mensagem".
 5. **Nome duplicado:** tente logar dois peers com o nome `ana` → o segundo é
    recusado (valida a seção crítica do login).
-6. **Concorrência de login/logout:** abra vários peers quase ao mesmo tempo (ex.:
-   em scripts) e faça logins/`exit` simultâneos; `users` deve permanecer
-   consistente — foco no mutex da lista.
+6. **Concorrência de login (mutex da lista):** use o `peertalk_stress` (ver a
+   seção "Demonstração automática da concorrência" abaixo) para disparar dezenas
+   de logins simultâneos e comparar o comportamento **com** e **sem** o mutex.
 7. **Logout:** `exit` em `bia`; nos outros, `users` não deve mais listar `bia`.
 8. **SIGINT:** `Ctrl+C` num peer também faz logout (descadastra) antes de sair.
+
+## Demonstração automática da concorrência (`peertalk_stress`)
+
+Testar logins simultâneos "na mão" é impraticável — você nunca consegue dois
+peers chegando ao cadastro no mesmo instante. O utilitário **`peertalk_stress`**
+faz isso de forma controlada e instrumentada, **sem alterar o `peertalker`**:
+
+- faz `fork` de **N** processos (padrão 20) que esperam numa **barreira de
+  largada** e disparam o login **todos no mesmo instante** (colisão máxima);
+- registra, com **timestamp em milissegundos**, a entrada/saída de cada processo
+  na seção crítica e o resultado (CADASTRADO / RECUSADO);
+- usa **nomes repetidos de propósito** (8 nomes distintos em rotação), então o
+  resultado correto é **exatamente 8 cadastros**, um por nome;
+- no fim, **confere a lista** e acusa qualquer nome duplicado.
+
+A flag **`--no-lock`** pula o `sem_lock`/`sem_unlock`: serve para demonstrar a
+corrida (sem o mutex, dois processos com o mesmo nome veem "livre" ao mesmo
+tempo e ambos cadastram → duplicados na lista).
+
+```bash
+# Pré-requisito: recursos criados.
+./bin/peertalk_init
+
+# COM mutex (correto): a lista termina consistente, 8 nomes distintos.
+./bin/peertalk_stress 20
+
+# SEM mutex (corrida): tende a cadastrar nomes DUPLICADOS.
+./bin/peertalk_stress 20 --no-lock
+```
+
+> Rode o `peertalk_stress` **com nenhum `peertalker` logado** (ele zera a lista
+> no início). Ajuste N com `./bin/peertalk_stress <N>`.
+
+**Saída esperada (resumida) — com mutex:**
+
+```
+[   123 ms] pid 4310   nome=user0     -> ENTROU na secao critica
+[   125 ms] pid 4310   nome=user0     -> CADASTRADO no slot 0
+[   125 ms] pid 4311   nome=user0     -> ENTROU na secao critica
+[   127 ms] pid 4311   nome=user0     -> RECUSADO (nome em uso)
+...
+>>> Lista consistente: nenhum nome duplicado. Mutex fez seu papel.
+```
+
+Repare que as entradas na seção crítica **não se sobrepõem**: o semáforo
+serializa o acesso. Com `--no-lock`, várias entram juntas ("ENTROU ... (SEM
+lock!)") e o relatório final acusa `<-- DUPLICADO!`. O programa também retorna
+código de saída 1 quando detecta duplicados (0 quando a lista está consistente).
 
 ## Limpeza de recursos IPC
 

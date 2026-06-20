@@ -179,6 +179,11 @@ gdb ./bin/chairman             # depurar
     descadastram). Fila p2p: mtype = PID destino, `pid_origem` no corpo. `recv` drena
     a fila por PID com IPC_NOWAIT para tabela local; `msgs`/`del msgs` operam local.
     `ipc_utils` ganhou helpers de shm/sem + `union semun`.
+  - Extra — `peertalk/peertalk_stress.c` (`bin/peertalk_stress`): demonstra o mutex.
+    Fork de N (padrão 20) processos que largam juntos numa barreira (shm
+    IPC_PRIVATE) e tentam logar com nomes repetidos; loga entrada/saída da seção
+    crítica com timestamp ms e confere duplicados. Flag `--no-lock` pula o semáforo
+    para evidenciar a corrida. Não altera o `peertalker`. Evidência p/ o relatório.
 - **Decisões tomadas:** IPC **System V**. CentralTalk: chairman sequencial + arrays
   estáticos. PeerTalk: binário separado `peertalk_init` (peers livres da infra);
   limpeza manual (`peertalk_init clean`/`limpa_ipc.sh`); `recv` não-bloqueante.
@@ -187,5 +192,5 @@ gdb ./bin/chairman             # depurar
 - **Pendências/dúvidas:** validar compilação/testes do PeerTalk na VM (foco no mutex
   da lista em logins/logouts simultâneos).
 - **Convenção de binários:** `bin/dyn_servidor`, `bin/dyn_cliente`, `bin/chairman`,
-  `bin/speaker`, `bin/peertalk_init`, `bin/peertalker`. Executar sempre a partir da
-  raiz do projeto (ftok usa `./.ipc_key`).
+  `bin/speaker`, `bin/peertalk_init`, `bin/peertalker`, `bin/peertalk_stress`.
+  Executar sempre a partir da raiz do projeto (ftok usa `./.ipc_key`).

@@ -59,13 +59,17 @@ $(BIN)/speaker: centraltalk/speaker.c $(COMMON_OBJ) | dirs
 # ------------------------------------------------------------------------- #
 # PeerTalk
 # ------------------------------------------------------------------------- #
-peertalk: dirs $(BIN)/peertalk_init $(BIN)/peertalker
+peertalk: dirs $(BIN)/peertalk_init $(BIN)/peertalker $(BIN)/peertalk_stress
 
 $(BIN)/peertalk_init: peertalk/peertalk_init.c $(COMMON_OBJ) | dirs
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ peertalk/peertalk_init.c $(COMMON_OBJ) $(LDFLAGS)
 
 $(BIN)/peertalker: peertalk/peertalker.c $(COMMON_OBJ) | dirs
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ peertalk/peertalker.c $(COMMON_OBJ) $(LDFLAGS)
+
+# Teste de concorrência da lista compartilhada (demonstra o mutex).
+$(BIN)/peertalk_stress: peertalk/peertalk_stress.c $(COMMON_OBJ) | dirs
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ peertalk/peertalk_stress.c $(COMMON_OBJ) $(LDFLAGS)
 
 # ------------------------------------------------------------------------- #
 # Objeto comum
