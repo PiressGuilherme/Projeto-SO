@@ -22,11 +22,12 @@ sudo apt install -y build-essential git gdb valgrind
 A partir da **raiz do projeto**:
 
 ```bash
-make            # compila tudo que já existe (atualmente o DynaThreadMaker)
+make            # compila os três sistemas + exemplos extras
 make clean      # remove binários (bin/) e objetos
 ```
 
-Os binários são gerados em `bin/`.
+Alvos individuais também disponíveis: `make dynathreadmaker`, `make centraltalk`,
+`make peertalk`, `make extras`. Os binários são gerados em `bin/`.
 
 > **Importante:** os programas geram as chaves IPC com `ftok("./.ipc_key", ...)`,
 > um caminho **relativo**. Por isso, execute os binários **a partir da raiz do
@@ -65,6 +66,14 @@ Resumo do PeerTalk (sem servidor — crie a infra primeiro):
 ./bin/peertalk_init          # cria shm + semáforo + fila (uma vez)
 ./bin/peertalker             # um por usuário, em terminais diferentes
 ./bin/peertalk_init clean    # remove os recursos IPC ao final
+```
+
+Demonstrações de concorrência (opcionais, descritas nos READMEs de cada pasta):
+
+```bash
+./bin/peertalk_stress 20            # PeerTalk: logins simultâneos com mutex
+./bin/peertalk_stress 20 --no-lock  # mesmo teste sem o mutex (mostra a corrida)
+./bin/semaforo_contador             # extras: produtor/consumidor (semáforo contador)
 ```
 
 ## Estrutura do repositório

@@ -14,3 +14,7 @@ vgcore.*
 # Editores / SO
 *.swp
 .vscode/
+
+# Artefatos de entrega (gerados, não versionados)
+relatorio.pdf
+*.zip
