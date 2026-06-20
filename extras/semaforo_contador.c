@@ -201,10 +201,25 @@ int main(int argc, char *argv[])
         shmctl(shmid, IPC_RMID, NULL);
         semctl(g_semid, 0, IPC_RMID);
 
-        printf("\nResumo: o produtor BLOQUEIA em P(VAZIOS) quando o buffer enche,\n");
-        printf("e o consumidor BLOQUEIA em P(CHEIOS) quando o buffer esvazia.\n");
-        printf("Esse 'contar recursos e esperar' e o papel do SEMAFORO CONTADOR,\n");
-        printf("diferente do MUTEX, que apenas garante um-por-vez na area critica.\n");
+        printf("\n========================= O QUE VOCE VIU =========================\n");
+        printf("Foram usados 3 semaforos, em DOIS papeis diferentes:\n\n");
+        printf("  MUTEX  (binario, so vale 0 ou 1)\n");
+        printf("    Papel: EXCLUSAO MUTUA. Garante que produtor e consumidor\n");
+        printf("    nunca mexam no buffer ao mesmo tempo (1 por vez).\n");
+        printf("    Pergunta que ele responde: \"posso ENTRAR na area critica?\"\n\n");
+        printf("  VAZIOS e CHEIOS  (CONTADORES, valem de 0 ate %d)\n", TAM_BUFFER);
+        printf("    Papel: SINCRONIZACAO. Contam recursos e fazem ESPERAR.\n");
+        printf("    - VAZIOS conta posicoes livres: quando chega a 0 (buffer\n");
+        printf("      cheio), o produtor PARA em P(VAZIOS) ate o consumidor\n");
+        printf("      retirar algo e fazer V(VAZIOS).\n");
+        printf("    - CHEIOS conta itens prontos: quando chega a 0 (buffer\n");
+        printf("      vazio), o consumidor PARA em P(CHEIOS) ate o produtor\n");
+        printf("      inserir algo e fazer V(CHEIOS).\n");
+        printf("    Pergunta que eles respondem: \"JA EXISTE o recurso que preciso?\"\n\n");
+        printf("EM UMA FRASE: o MUTEX controla QUEM entra; os CONTADORES controlam\n");
+        printf("QUANDO da para entrar. Por isso 'mutex' e so um caso particular de\n");
+        printf("semaforo (binario); o semaforo CONTADOR e a forma mais geral.\n");
+        printf("==================================================================\n");
     }
 
     return EXIT_SUCCESS;
