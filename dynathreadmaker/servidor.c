@@ -44,6 +44,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <pthread.h>
+#include <sys/ipc.h>     /* IPC_CREAT, IPC_RMID */
+#include <sys/msg.h>     /* msgctl() */
 
 /* ------------------------------------------------------------------------- *
  * Estado de sincronização da cópia de argumentos
