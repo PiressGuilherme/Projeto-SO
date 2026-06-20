@@ -8,6 +8,7 @@
 #   make dynathreadmaker        compila apenas o DynaThreadMaker
 #   make centraltalk            compila apenas o CentralTalk
 #   make peertalk               compila apenas o PeerTalk
+#   make extras                 compila exemplos didáticos (ex.: semáforo contador)
 #   make clean                  remove binários e objetos
 #
 # Regra do projeto: tratar todo warning como bug. Por isso -Wall -Wextra.
@@ -26,9 +27,9 @@ COMMON_SRC := common/ipc_utils.c
 COMMON_OBJ := common/ipc_utils.o
 
 # ------------------------------------------------------------------------- #
-.PHONY: all clean dirs dynathreadmaker centraltalk peertalk
+.PHONY: all clean dirs dynathreadmaker centraltalk peertalk extras
 
-all: dynathreadmaker centraltalk peertalk
+all: dynathreadmaker centraltalk peertalk extras
 
 # Garante a existência do diretório de saída antes de linkar.
 dirs:
@@ -70,6 +71,14 @@ $(BIN)/peertalker: peertalk/peertalker.c $(COMMON_OBJ) | dirs
 # Teste de concorrência da lista compartilhada (demonstra o mutex).
 $(BIN)/peertalk_stress: peertalk/peertalk_stress.c $(COMMON_OBJ) | dirs
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ peertalk/peertalk_stress.c $(COMMON_OBJ) $(LDFLAGS)
+
+# ------------------------------------------------------------------------- #
+# Extras — exemplos didáticos (autocontidos, não linkam o objeto comum)
+# ------------------------------------------------------------------------- #
+extras: dirs $(BIN)/semaforo_contador
+
+$(BIN)/semaforo_contador: extras/semaforo_contador.c | dirs
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ extras/semaforo_contador.c $(LDFLAGS)
 
 # ------------------------------------------------------------------------- #
 # Objeto comum

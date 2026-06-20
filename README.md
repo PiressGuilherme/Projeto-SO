@@ -87,6 +87,10 @@ Resumo do PeerTalk (sem servidor — crie a infra primeiro):
 ├── peertalk/
 │   ├── peertalk_init.c      # cria/remove os recursos IPC (shm+sem+fila)
 │   ├── peertalker.c         # processo peer (login, comandos, p2p)
+│   ├── peertalk_stress.c    # demonstração do mutex da lista (login concorrente)
+│   └── README.md
+├── extras/
+│   ├── semaforo_contador.c  # exemplo didático: semáforo contador vs. mutex
 │   └── README.md
 ├── scripts/
 │   └── limpa_ipc.sh         # remove recursos IPC órfãos entre testes

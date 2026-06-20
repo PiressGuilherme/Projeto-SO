@@ -36,6 +36,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <sched.h>
 #include <sys/wait.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -217,10 +218,14 @@ int main(int argc, char *argv[])
             char nome[MAX_NOME];
             snprintf(nome, sizeof(nome), "user%d", i % NOMES_DISTINTOS);
 
-            /* Chega à barreira e espera a largada (busy-wait curto). */
+            /* Chega à barreira e espera a largada. IMPORTANTE: cedemos a CPU
+             * com sched_yield() a cada iteração em vez de girar a 100%. Com N
+             * processos esperando ao mesmo tempo, um busy-wait puro satura a
+             * máquina (foi o que travou a VM). sched_yield mantém a largada
+             * praticamente simultânea, mas sem monopolizar o processador. */
             __sync_fetch_and_add(&bar->prontos, 1);
             while (!bar->largada) {
-                /* giro de espera: todos largam praticamente juntos */
+                sched_yield();
             }
 
             cadastrar(lista, semid, nome, getpid(), usar_lock);

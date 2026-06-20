@@ -184,6 +184,15 @@ gdb ./bin/chairman             # depurar
     IPC_PRIVATE) e tentam logar com nomes repetidos; loga entrada/saída da seção
     crítica com timestamp ms e confere duplicados. Flag `--no-lock` pula o semáforo
     para evidenciar a corrida. Não altera o `peertalker`. Evidência p/ o relatório.
+    Correção pós-teste: o busy-wait da barreira (`while(!largada){}`) travava a VM
+    com N processos a 100% de CPU — trocado por `sched_yield()`.
+  - Extra — `extras/semaforo_contador.c` (`bin/semaforo_contador`, alvo `extras`):
+    exemplo didático de **semáforo CONTADOR** (produtor/consumidor com 3 semáforos:
+    VAZIOS/CHEIOS contadores + MUTEX binário). Mostra a diferença mutex vs. semáforo
+    pedida pelo usuário. Autocontido (IPC_PRIVATE, cria e remove os próprios
+    recursos), não usa `ipc_utils`. Os 3 exercícios usam semáforo no papel de mutex;
+    este torna explícito o papel de contador/sincronização (e conecta com o
+    mutex+cond do DynaThreadMaker).
 - **Decisões tomadas:** IPC **System V**. CentralTalk: chairman sequencial + arrays
   estáticos. PeerTalk: binário separado `peertalk_init` (peers livres da infra);
   limpeza manual (`peertalk_init clean`/`limpa_ipc.sh`); `recv` não-bloqueante.
