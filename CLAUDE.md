@@ -158,23 +158,31 @@ gdb ./bin/chairman             # depurar
 
 > Atualizar esta seção ao fim de cada sessão de trabalho para dar continuidade.
 
-- **Fase atual:** Fase 1 concluída (DynaThreadMaker). Próxima: Fase 2 (CentralTalk).
+- **Fase atual:** Fases 1 e 2 concluídas. DynaThreadMaker testado e OK na VM.
+  Próxima: Fase 3 (PeerTalk).
 - **Feito:**
   - Fase 0 — infra: `.gitignore`, `.ipc_key` (âncora ftok), `common/protocol.h`,
     `common/ipc_utils.{h,c}` (wrappers de fila com tratamento de erro), `Makefile`
-    (`-Wall -Wextra -std=c11 -pthread`, alvos `all`/`dynathreadmaker`/`clean`),
-    `scripts/limpa_ipc.sh`, README raiz.
-  - Fase 1 — DynaThreadMaker: `dynathreadmaker/servidor.c` e `cliente.c` + README.
-    Servidor com loop de `msgrcv`, criação de thread por requisição, cópia de
-    argumentos protegida por `pthread_mutex_t` + `pthread_cond_t` (a principal só
-    prossegue após a secundária sinalizar a cópia), handler de SIGINT removendo a
-    fila, e mensagem de encerramento. Cliente com menu, montagem da requisição
-    (carimbada com o PID) e espera de resposta com timeout (IPC_NOWAIT em laço).
-- **Decisão tomada:** IPC **System V** (confirmado com o usuário), conforme o
-  vocabulário do enunciado (msgtyp tipo 1 / PID).
-- **Próximo passo:** Fase 2 — CentralTalk (`chairman` + `speaker`). Reusar
-  `common/protocol.h` (PROJ_ID_CENTRALTALK já reservado) e `ipc_utils`.
-- **Pendências/dúvidas:** validar a compilação e os testes do DynaThreadMaker na
-  VM Linux (o desenvolvimento é feito no Windows; build/execução só no Linux).
-- **Convenção de binários:** `bin/dyn_servidor`, `bin/dyn_cliente`. Executar
-  sempre a partir da raiz do projeto (ftok usa caminho relativo `./.ipc_key`).
+    (`-Wall -Wextra -std=c11 -pthread`, alvos `all`/`dynathreadmaker`/`centraltalk`/
+    `clean`), `scripts/limpa_ipc.sh`, README raiz.
+  - Fase 1 — DynaThreadMaker (`servidor.c` + `cliente.c` + README): **testado OK na
+    VM**. Cópia de argumentos protegida por `pthread_mutex_t` + `pthread_cond_t` (a
+    principal só prossegue após a secundária sinalizar a cópia), SIGINT remove a fila,
+    cliente com timeout (IPC_NOWAIT em laço). Correção aplicada: servidor precisava
+    incluir `<sys/ipc.h>`/`<sys/msg.h>` por usar IPC_RMID/IPC_CREAT direto.
+  - Fase 2 — CentralTalk (`chairman.c` + `speaker.c` + README): chairman **sequencial
+    single-thread** (sem mutex, arrays estáticos: `CT_MAX_USUARIOS/MSGS/POSTS`),
+    mantém msgs por usuário + fórum + logados. Todos os comandos do enunciado
+    (send/msgs/post/show/del msgs/del post N/del posts/users/myid/exit) + login com
+    nome único. Respostas multilinha via 1 msg/linha com flag `fim`; speaker faz
+    parsing dos comandos e exibe respostas, com timeout.
+- **Decisão tomada:** IPC **System V** (confirmado). CentralTalk: chairman sequencial
+  + arrays estáticos (confirmado com o usuário).
+- **Próximo passo:** Fase 3 — PeerTalk (`peertalker`). Reusar `protocol.h`
+  (PROJ_ID_PEERTALK reservado). Novidade da fase: lista de usuários em **memória
+  compartilhada (shmget)** protegida por **mutex/semáforo (semget)** — `ipc_utils`
+  precisará de helpers de shm/sem. Cada peer executa os próprios comandos; msgtyp =
+  PID destino, 1º campo de dados = PID origem.
+- **Pendências/dúvidas:** validar compilação/testes do CentralTalk na VM.
+- **Convenção de binários:** `bin/dyn_servidor`, `bin/dyn_cliente`, `bin/chairman`,
+  `bin/speaker`. Executar sempre a partir da raiz do projeto (ftok usa `./.ipc_key`).

@@ -117,4 +117,67 @@ struct dyn_msg_resposta {
 #define DYN_REQ_BODY_SIZE  (sizeof(struct dyn_msg_requisicao) - sizeof(long))
 #define DYN_RESP_BODY_SIZE (sizeof(struct dyn_msg_resposta)   - sizeof(long))
 
+/* ========================================================================= *
+ *                            SISTEMA CentralTalk
+ * ========================================================================= *
+ * Arquitetura cliente/servidor: o servidor `chairman` executa TODOS os
+ * comandos e mantém o estado (mensagens por usuário, fórum público, lista de
+ * logados). O cliente `speaker` apenas lê/valida comandos, empacota-os numa
+ * requisição (carimbada com o PID) e exibe a(s) resposta(s).
+ *
+ * Roteamento (mesma convenção do DynaThreadMaker):
+ *   - requisição: mtype = MSGTYP_SERVIDOR (1);
+ *   - resposta  : mtype = PID do speaker.
+ *
+ * Respostas MULTILINHA: comandos como `msgs`, `show` e `users` produzem várias
+ * linhas. Em vez de um buffer gigante, o chairman envia UMA resposta por linha
+ * e marca a última com `fim = 1`. O speaker lê respostas até receber `fim = 1`.
+ */
+
+/* Comandos do usuário, identificados no corpo da requisição (campo `cmd`).
+ * O speaker faz o parsing do texto digitado e preenche estes campos; o
+ * chairman nunca precisa reinterpretar a linha de comando crua. */
+enum ct_comando {
+    CT_LOGIN = 0,      /* tentativa de login (nome em `arg_nome`) */
+    CT_SEND,           /* send <nome> <texto>  -> arg_nome + arg_texto */
+    CT_MSGS,           /* msgs                 -> lista msgs recebidas */
+    CT_POST,           /* post <texto>         -> arg_texto */
+    CT_SHOW,           /* show                 -> lista o fórum */
+    CT_DEL_MSGS,       /* del msgs             -> apaga msgs recebidas */
+    CT_DEL_POST,       /* del post <n>         -> arg_num (índice no fórum) */
+    CT_DEL_POSTS,      /* del posts            -> apaga todo o fórum */
+    CT_USERS,          /* users                -> lista logados */
+    CT_MYID,           /* myid                 -> nome + PID do usuário */
+    CT_EXIT            /* exit                 -> logout + encerra o speaker */
+};
+
+/* Requisição SPEAKER -> CHAIRMAN (mtype = MSGTYP_SERVIDOR). */
+struct ct_msg_requisicao {
+    long  mtype;                 /* sempre MSGTYP_SERVIDOR (1) */
+
+    int   cmd;                   /* enum ct_comando */
+    pid_t pid_cliente;           /* PID do speaker; usado no mtype da resposta */
+
+    char  arg_nome[MAX_NOME];    /* nome do usuário (login / destino do send) */
+    char  arg_texto[MAX_TEXTO];  /* texto da mensagem (send / post) */
+    int   arg_num;               /* índice (del post <n>) */
+};
+
+/* Resposta CHAIRMAN -> SPEAKER (mtype = PID do speaker). */
+struct ct_msg_resposta {
+    long mtype;                  /* = PID do speaker destino */
+
+    int  sucesso;                /* 1 = ok, 0 = erro/aviso */
+    int  fim;                    /* 1 = última linha desta resposta */
+    char texto[MAX_TEXTO];       /* uma linha de texto para exibir */
+};
+
+#define CT_REQ_BODY_SIZE  (sizeof(struct ct_msg_requisicao) - sizeof(long))
+#define CT_RESP_BODY_SIZE (sizeof(struct ct_msg_resposta)   - sizeof(long))
+
+/* Limites das estruturas mantidas pelo chairman (arrays estáticos). */
+#define CT_MAX_USUARIOS         32   /* usuários logados simultaneamente */
+#define CT_MAX_MSGS_POR_USUARIO 64   /* mensagens diretas guardadas por usuário */
+#define CT_MAX_POSTS            128  /* mensagens no fórum público */
+
 #endif /* PROTOCOL_H */

@@ -7,7 +7,7 @@ memória compartilhada, semáforos) e **pthreads**. Desenvolvido em VM Linux
 | Sistema | Descrição | Estado |
 |---|---|---|
 | **DynaThreadMaker** | Cliente/servidor; servidor cria threads sob demanda via fila de mensagens; cópia de argumentos sincronizada por mutex. | ✅ implementado |
-| **CentralTalk** | Chat centralizado (`chairman` + `speaker`); lógica de comandos no servidor. | ⏳ Fase 2 |
+| **CentralTalk** | Chat centralizado (`chairman` + `speaker`); lógica de comandos no servidor. | ✅ implementado |
 | **PeerTalk** | Chat peer-to-peer; lista de usuários em memória compartilhada protegida por mutex. | ⏳ Fase 3 |
 
 ## Requisitos (na VM Linux)
@@ -38,15 +38,24 @@ Os binários são gerados em `bin/`.
 Cada sistema tem instruções próprias:
 
 - DynaThreadMaker → [`dynathreadmaker/README.md`](dynathreadmaker/README.md)
+- CentralTalk → [`centraltalk/README.md`](centraltalk/README.md)
 
 Resumo do DynaThreadMaker:
 
 ```bash
 # Terminal A (servidor — iniciar primeiro):
 ./bin/dyn_servidor
-
 # Terminal B, C, ... (clientes):
 ./bin/dyn_cliente
+```
+
+Resumo do CentralTalk:
+
+```bash
+# Terminal A (servidor — iniciar primeiro):
+./bin/chairman
+# Terminal B, C, ... (clientes):
+./bin/speaker
 ```
 
 ## Estrutura do repositório
@@ -61,6 +70,10 @@ Resumo do DynaThreadMaker:
 ├── dynathreadmaker/
 │   ├── servidor.c
 │   ├── cliente.c
+│   └── README.md
+├── centraltalk/
+│   ├── chairman.c           # servidor
+│   ├── speaker.c            # cliente
 │   └── README.md
 ├── scripts/
 │   └── limpa_ipc.sh         # remove recursos IPC órfãos entre testes

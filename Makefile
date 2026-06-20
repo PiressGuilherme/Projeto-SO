@@ -6,6 +6,7 @@
 # Alvos:
 #   make            (= make all) compila tudo que já existe
 #   make dynathreadmaker        compila apenas o DynaThreadMaker
+#   make centraltalk            compila apenas o CentralTalk
 #   make clean                  remove binários e objetos
 #
 # Regra do projeto: tratar todo warning como bug. Por isso -Wall -Wextra.
@@ -24,9 +25,9 @@ COMMON_SRC := common/ipc_utils.c
 COMMON_OBJ := common/ipc_utils.o
 
 # ------------------------------------------------------------------------- #
-.PHONY: all clean dirs dynathreadmaker
+.PHONY: all clean dirs dynathreadmaker centraltalk
 
-all: dynathreadmaker
+all: dynathreadmaker centraltalk
 
 # Garante a existência do diretório de saída antes de linkar.
 dirs:
@@ -42,6 +43,17 @@ $(BIN)/dyn_servidor: dynathreadmaker/servidor.c $(COMMON_OBJ) | dirs
 
 $(BIN)/dyn_cliente: dynathreadmaker/cliente.c $(COMMON_OBJ) | dirs
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ dynathreadmaker/cliente.c $(COMMON_OBJ) $(LDFLAGS)
+
+# ------------------------------------------------------------------------- #
+# CentralTalk
+# ------------------------------------------------------------------------- #
+centraltalk: dirs $(BIN)/chairman $(BIN)/speaker
+
+$(BIN)/chairman: centraltalk/chairman.c $(COMMON_OBJ) | dirs
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ centraltalk/chairman.c $(COMMON_OBJ) $(LDFLAGS)
+
+$(BIN)/speaker: centraltalk/speaker.c $(COMMON_OBJ) | dirs
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ centraltalk/speaker.c $(COMMON_OBJ) $(LDFLAGS)
 
 # ------------------------------------------------------------------------- #
 # Objeto comum
