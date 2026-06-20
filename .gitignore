@@ -1,0 +1,16 @@
+# Binários gerados pelo build (recriados com `make`)
+/bin/
+
+# Objetos e artefatos de compilação
+*.o
+*.out
+a.out
+
+# Núcleos de depuração
+core
+core.*
+vgcore.*
+
+# Editores / SO
+*.swp
+.vscode/

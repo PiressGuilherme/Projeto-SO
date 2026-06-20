@@ -1,0 +1,14 @@
+Arquivo-âncora para geração das chaves IPC System V via ftok().
+
+NÃO REMOVER e NÃO ALTERAR o caminho deste arquivo.
+
+ftok(caminho, id_projeto) deriva uma chave IPC (key_t) a partir do
+inode do arquivo apontado por `caminho` combinado com `id_projeto`.
+Todos os processos de um mesmo sistema (servidor + clientes) precisam
+chamar ftok() com EXATAMENTE o mesmo caminho e o mesmo id de projeto
+para obterem a mesma chave e, portanto, acessarem o mesmo recurso IPC.
+
+Por isso usamos um arquivo fixo e versionado no repositório, localizado
+na raiz do projeto. Cada sistema usa um id de projeto distinto
+(ver common/protocol.h), garantindo chaves diferentes para
+DynaThreadMaker, CentralTalk e PeerTalk mesmo compartilhando esta âncora.
