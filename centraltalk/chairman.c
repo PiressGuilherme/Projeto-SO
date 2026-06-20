@@ -166,8 +166,10 @@ static void cmd_send(const struct ct_msg_requisicao *req, int idx_origem)
         return;
     }
     /* Guarda a mensagem na caixa do destinatário, prefixada pelo remetente.
-     * A mensagem só será mostrada quando o destinatário usar `msgs`. */
-    char linha[MAX_TEXTO];
+     * A mensagem só será mostrada quando o destinatário usar `msgs`.
+     * Compomos num buffer MAX_LINHA (cabe nome + rótulo + texto sem truncar) e
+     * só então copiamos para o campo MAX_TEXTO com truncamento explícito. */
+    char linha[MAX_LINHA];
     snprintf(linha, sizeof(linha), "de %s: %s",
              usuarios[idx_origem].nome, req->arg_texto);
     strncpy(dest->msgs[dest->n_msgs], linha, MAX_TEXTO);
@@ -184,7 +186,10 @@ static void cmd_msgs(const struct ct_msg_requisicao *req, int idx)
         responder(req->pid_cliente, 1, "Voce nao tem mensagens.");
         return;
     }
-    char linha[MAX_TEXTO];
+    /* Buffer MAX_LINHA: cada msg já pode ter MAX_TEXTO chars; o prefixo "  [N] "
+     * exige espaço extra. enviar_linha copia para o campo MAX_TEXTO da resposta
+     * (truncando com segurança se necessário). */
+    char linha[MAX_LINHA];
     /* Envia cabeçalho + cada mensagem; a última leva fim = 1. */
     snprintf(linha, sizeof(linha), "Voce tem %d mensagem(ns):", u->n_msgs);
     enviar_linha(req->pid_cliente, 1, 0, linha);
@@ -200,9 +205,13 @@ static void cmd_post(const struct ct_msg_requisicao *req, int idx)
         responder(req->pid_cliente, 0, "Erro: o forum esta cheio.");
         return;
     }
-    /* Publica no fórum, prefixado pelo autor. */
-    snprintf(forum[n_posts], MAX_TEXTO, "%s: %s",
+    /* Publica no fórum, prefixado pelo autor. Compomos num buffer MAX_LINHA
+     * (sem truncar) e copiamos para o slot MAX_TEXTO com truncamento explícito. */
+    char linha[MAX_LINHA];
+    snprintf(linha, sizeof(linha), "%s: %s",
              usuarios[idx].nome, req->arg_texto);
+    strncpy(forum[n_posts], linha, MAX_TEXTO);
+    forum[n_posts][MAX_TEXTO - 1] = '\0';
     n_posts++;
     responder(req->pid_cliente, 1, "Mensagem publicada no forum.");
 }
@@ -213,7 +222,7 @@ static void cmd_show(const struct ct_msg_requisicao *req)
         responder(req->pid_cliente, 1, "O forum esta vazio.");
         return;
     }
-    char linha[MAX_TEXTO];
+    char linha[MAX_LINHA];   /* prefixo "  [N] " + post de até MAX_TEXTO chars */
     enviar_linha(req->pid_cliente, 1, 0, "Forum publico:");
     for (int i = 0; i < n_posts; i++) {
         snprintf(linha, sizeof(linha), "  [%d] %s", i + 1, forum[i]);

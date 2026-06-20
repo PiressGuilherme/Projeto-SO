@@ -61,6 +61,13 @@
 #define MAX_NOME            21    /* 20 caracteres + terminador '\0' */
 #define MAX_TEXTO           256   /* mensagem de texto + terminador  */
 
+/* Buffer auxiliar para compor uma linha "prefixo + texto" (ex.: "de NOME: TEXTO"
+ * ou "  [N] TEXTO"). Precisa caber o texto máximo (MAX_TEXTO) MAIS o prefixo,
+ * sem truncar conteúdo do usuário. 64 bytes folgam para nome + rótulos + índice.
+ * O resultado é depois copiado (com truncamento seguro) para um campo MAX_TEXTO
+ * quando precisa caber numa mensagem da fila. */
+#define MAX_LINHA           (MAX_TEXTO + 64)
+
 /* ========================================================================= *
  *                         SISTEMA DynaThreadMaker
  * ========================================================================= */
