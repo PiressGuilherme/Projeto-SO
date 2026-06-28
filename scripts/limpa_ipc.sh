@@ -8,8 +8,7 @@
 # `ipcs`. Reusar a mesma chave depois pode pegar um recurso em estado sujo.
 #
 # Este script remove TODOS os recursos IPC pertencentes ao usuário corrente —
-# útil para limpar entre testes. Use com cuidado: ele não distingue recursos
-# deste trabalho de outros recursos IPC seus que porventura existam.
+# útil para limpar entre testes. 
 #
 # Uso:
 #   ./scripts/limpa_ipc.sh          # remove os recursos e mostra o antes/depois

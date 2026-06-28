@@ -1,14 +1,13 @@
 # Projeto SO — Trabalho Prático de Sistemas Operacionais (UFCSPA)
 
 Três sistemas concorrentes em **C** usando **IPC System V** (filas de mensagens,
-memória compartilhada, semáforos) e **pthreads**. Desenvolvido em VM Linux
-(Ubuntu 24.04). Plano de desenvolvimento e regras em [`CLAUDE.md`](CLAUDE.md).
+memória compartilhada, semáforos) e **pthreads**. Desenvolvido em VM Linux (Ubuntu 24.04).
 
 | Sistema | Descrição | Estado |
 |---|---|---|
-| **DynaThreadMaker** | Cliente/servidor; servidor cria threads sob demanda via fila de mensagens; cópia de argumentos sincronizada por mutex. | ✅ implementado |
-| **CentralTalk** | Chat centralizado (`chairman` + `speaker`); lógica de comandos no servidor. | ✅ implementado |
-| **PeerTalk** | Chat peer-to-peer; lista de usuários em memória compartilhada protegida por mutex. | ✅ implementado |
+| **DynaThreadMaker** | Cliente/servidor; servidor cria threads sob demanda via fila de mensagens; cópia de argumentos sincronizada por mutex. 
+| **CentralTalk** | Chat centralizado (`chairman` + `speaker`); lógica de comandos no servidor.
+| **PeerTalk** | Chat peer-to-peer; lista de usuários em memória compartilhada protegida por mutex.
 
 ## Requisitos (na VM Linux)
 
